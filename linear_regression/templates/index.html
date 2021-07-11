@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Linear Regression Using Gradient Descent Algorithm</title>
+    <style>
+        {# TODO: make here beautiful #}
+    </style>
+</head>
+<body>
+    <p>Input: {{ points }}</p>
+    <p>Alpha: {{ gd.alpha }}</p>
+    <p>Acceptable range: {{ gd.acceptable_range }}</p>
+    <p>Max steps: {{ gd.max_steps }}</p>
+    <p>Theta0: {{ gd.theta0 }}</p>
+    <p>Theta1: {{ gd.theta1 }}</p>
+    <p>Error: {{ gd.error }}</p>
+    <img src="data:image/png;base64, {{ gd_plot_uri }}" alt="" height="400" width="400">
+    <img src="data:image/png;base64, {{ j_theta0_plot_uri }}" alt="" height="400" width="400">
+    <img src="data:image/png;base64, {{ j_theta1_plot_uri }}" alt="" height="400" width="400">
+    <p><a href="/proceed/{{ gd_id }}/">Proceed</a></p>
+    <p><a href="/run/{{ gd_id }}/">Run</a></p>
+    <p><a href="/">Start over</a></p>
+</body>
+</html>
