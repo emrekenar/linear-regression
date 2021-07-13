@@ -18,6 +18,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('change_num_points/<int:gd_id>/', views.change_num_points, name='num_points'),
+    path('change_points/<int:gd_id>/', views.change_points, name='points'),
     path('proceed/<int:gd_id>/', views.proceed, name='proceed'),
     path('run/<int:gd_id>/', views.run, name='run'),
     path('admin/', admin.site.urls),

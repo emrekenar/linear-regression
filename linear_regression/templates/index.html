@@ -8,7 +8,29 @@
     </style>
 </head>
 <body>
-    <p>Input: {{ points }}</p>
+    <p>
+        {% if not gd.points_ready %}
+            <form action={% url 'num_points' gd_id %} method="post">
+            {% csrf_token %}
+                {{ num_points_form }}
+                <input type="submit" value="Update number of points">
+            </form>
+        {% else %}
+            Number of points: {{ gd.num_points }}
+        {% endif %}
+    </p>
+    <p>Points:</p>
+    {% if not gd.points_ready %}
+        <form action={% url 'points' gd_id %} method="post">
+        {% csrf_token %}
+            {{ points_form }}
+            <input type="submit" value="Update points">
+        </form>
+    {% else %}
+        {% for i, point in enum_points %}
+            <p>X{{ i }}: {{ point.x }}  Y{{ i }}: {{ point.y }}</p>
+        {% endfor %}
+    {% endif %}
     <p>Alpha: {{ gd.alpha }}</p>
     <p>Acceptable range: {{ gd.acceptable_range }}</p>
     <p>Max steps: {{ gd.max_steps }}</p>

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import matplotlib
 
 matplotlib.use('Agg')  # this is required for the program to work in OSX
@@ -19,9 +21,11 @@ class GradientDescent(models.Model):
     for points (xi, yi), define error function J(theta0, theta1),
     find theta0, theta1 that minimizes J.
     """
+    num_points = models.IntegerField(default=10)
+    points_ready = models.BooleanField(default=False)
     points_x = models.CharField(max_length=200, default='')
     points_y = models.CharField(max_length=200, default='')
-    pub_date = models.DateTimeField(default=timezone.now, null=True)
+    last_edited = models.DateTimeField(default=timezone.now, null=True)
     alpha = models.FloatField(default=0.0)
     acceptable_range = models.FloatField(default=0.0)
     max_steps = models.IntegerField(default=0)
@@ -29,16 +33,20 @@ class GradientDescent(models.Model):
     theta1 = models.FloatField(default=0.0)
     error = models.FloatField(default=0.0)
 
-    def init_parameters(self):
-        # define points randomly  # TODO: allow users to define points
-        sz, min_val, max_val = 10, 0, 10
-        points = []
-        for i in range(sz):
-            points.append(Point(randint(min_val, max_val), randint(min_val, max_val)))
-        self.points_x, self.points_y = serialize_points(points)
+    def save(self, *args, **kwargs):
+        # store time of last edit
+        self.last_edited = timezone.now()
 
-        # store time of creation  # TODO: make here last edit time and clean unused objects
-        self.pub_date = timezone.now()
+        # before saving, clean unused objects
+        clean_unused()
+
+        super(GradientDescent, self).save(*args, **kwargs)
+
+    def init_parameters(self, num_points=10):
+        # define points randomly at first or when num_points changes
+        self.num_points = num_points
+        self.points_ready = False
+        (self.points_x, self.points_y), points = self.random_points()
 
         # find minimum and maximum values of y
         min_y, max_y = 1024, -1024
@@ -72,6 +80,11 @@ class GradientDescent(models.Model):
         self.theta1 = self.theta1 - self.alpha * delta_j(self.theta0, self.theta1, points, 1)
         self.theta0 = temp
         self.error = j(self.theta0, self.theta1, points)
+
+        # after the algorithm starts, points cannot be changed
+        if not self.points_ready:
+            self.points_ready = True
+
         self.save()
 
     def run(self):
@@ -85,6 +98,11 @@ class GradientDescent(models.Model):
             step += 1
 
         self.error = j(self.theta0, self.theta1, points)
+
+        # after the algorithm starts, points cannot be changed
+        if not self.points_ready:
+            self.points_ready = True
+
         self.save()
 
     def get_gd_plot_uri(self):
@@ -125,6 +143,7 @@ class GradientDescent(models.Model):
             y = [j(self.theta0, theta1, points) for theta1 in x]
 
         plt.plot(x, y, '--bo')
+        plt.plot([x[int(num_datapoints/2)] for _ in x], [min(y)+i*(max(y)-min(y))/len(y) for i in range(len(y))], 'r')
         plt.title('error with respect to theta%s' % index)
 
         return fig_to_uri()
@@ -132,8 +151,21 @@ class GradientDescent(models.Model):
     def deserialized_points(self):
         return deserialize_points(self.points_x, self.points_y)
 
+    def set_num_points(self, new_num):
+        self.init_parameters(new_num)
+
+    def set_points(self, points_x, points_y):
+        self.points_x, self.points_y = points_x, points_y
+        self.save()
+
+    def random_points(self, min_val=0, max_val=10):
+        points = []
+        for i in range(self.num_points):
+            points.append(Point(randint(min_val * 10, max_val * 10) / 10.0, randint(min_val * 10, max_val * 10) / 10.0))
+        return serialize_points(points), points
+
     def __str__(self):
-        return 'GD(%s,%s)' % (self.theta0, self.theta1)
+        return 'GD%s(%s,%s)' % (self.id, self.theta0, self.theta1)
 
 
 def h(theta0, theta1, x):
@@ -195,6 +227,13 @@ def fig_to_uri():
     uri = urllib.parse.quote(string)
     plt.clf()  # clean previous graphs
     return uri
+
+
+def clean_unused(mins=15):
+    """remove GradientDescent objects that are not used in 'mins' minutes"""
+    latest = timezone.now() - timezone.timedelta(minutes=mins)
+    query_set = GradientDescent.objects.filter(last_edited__lt=latest)
+    query_set.delete()
 
 
 class Point:
