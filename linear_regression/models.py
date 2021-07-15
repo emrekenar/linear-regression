@@ -10,6 +10,8 @@ import io
 import urllib
 import base64
 
+from math import log
+
 from random import randint
 from django.db import models
 from django.utils import timezone
@@ -28,6 +30,7 @@ class GradientDescent(models.Model):
     last_edited = models.DateTimeField(default=timezone.now, null=True)
     alpha = models.FloatField(default=0.0)
     acceptable_range = models.FloatField(default=0.0)
+    current_step = models.IntegerField(default=0)
     max_steps = models.IntegerField(default=0)
     theta0 = models.FloatField(default=0.0)
     theta1 = models.FloatField(default=0.0)
@@ -57,14 +60,15 @@ class GradientDescent(models.Model):
             if y > max_y:
                 max_y = y
 
-        # TODO: compare fixed alpha with a decaying alpha. find a way to calculate best alpha.
-        self.alpha = 0.025
-
         # select a little acceptable range for high precision
         self.acceptable_range = 2 ** -32
 
         # avoid overflow
+        self.current_step = 0
         self.max_steps = 1000
+
+        # initialize alpha
+        self.update_alpha()
 
         # set initial theta0, theta1 and find error
         self.theta0 = min_y
@@ -80,6 +84,8 @@ class GradientDescent(models.Model):
         self.theta1 = self.theta1 - self.alpha * delta_j(self.theta0, self.theta1, points, 1)
         self.theta0 = temp
         self.error = j(self.theta0, self.theta1, points)
+        self.current_step += 1
+        self.update_alpha()
 
         # after the algorithm starts, points cannot be changed
         if not self.points_ready:
@@ -88,14 +94,14 @@ class GradientDescent(models.Model):
         self.save()
 
     def run(self):
-        step = 0
         points = deserialize_points(self.points_x, self.points_y)
 
-        while self.error > self.acceptable_range and step < self.max_steps:
+        while self.error > self.acceptable_range and self.current_step < self.max_steps:
             temp = self.theta0 - self.alpha * delta_j(self.theta0, self.theta1, points, 0)
             self.theta1 = self.theta1 - self.alpha * delta_j(self.theta0, self.theta1, points, 1)
             self.theta0 = temp
-            step += 1
+            self.current_step += 1
+            self.update_alpha()
 
         self.error = j(self.theta0, self.theta1, points)
 
@@ -104,6 +110,12 @@ class GradientDescent(models.Model):
             self.points_ready = True
 
         self.save()
+
+    def update_alpha(self):
+        """decrease alpha exponentially to tune gradient descent"""
+        max_alpha = 0.1
+        min_alpha = 0.01
+        self.alpha = max_alpha - (max_alpha - min_alpha) * log(self.current_step + 1) / log(self.max_steps)
 
     def get_gd_plot_uri(self):
         """
