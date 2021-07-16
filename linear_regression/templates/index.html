@@ -4,45 +4,139 @@
     <meta charset="UTF-8">
     <title>Linear Regression Using Gradient Descent Algorithm</title>
     <style>
-        {# TODO: make here beautiful #}
+        body{
+            background: beige;
+        }
+        #left_panel{
+            position: absolute;
+            left: 0;
+            top: 80px;
+        }
+        #num_points_div{
+            width: 200px;
+            height: 100px;
+            text-align: center;
+            border: 2px solid black;
+        }
+        #points_div{
+            width: 200px;
+            list-style-type: none;
+            text-align: center;
+            border: 2px solid black;
+        }
+        #parameters_panel{
+            position: absolute;
+            left: 540px;
+            top: 80px;
+            text-align: center;
+        }
+        #parameters_div_1{
+            width: 300px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            border: 2px solid black;
+        }
+        #parameters_div_2{
+            width: 300px;
+            position: absolute;
+            left: 300px;
+            top: 0;
+            border: 2px solid black;
+        }
+        #graphs_panel{
+            position: absolute;
+            left: 300px;
+            top: 250px;
+        }
+        #graph_div_1{
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        #graph_div_2{
+            position: absolute;
+            left: 400px;
+            top: 0;
+        }
+        #graph_div_3{
+            position:absolute;
+            left: 800px;
+            top: 0;
+        }
+        #commands_panel{
+            position: absolute;
+            right: 0;
+            top: 80px;
+            width: 200px;
+            height: 150px;
+            border: 2px solid black;
+            text-align: center;
+            color: black;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <p>
-        {% if not gd.points_ready %}
-            <form action={% url 'num_points' gd_id %} method="post">
-            {% csrf_token %}
-                {{ num_points_form }}
-                <input type="submit" value="Update number of points">
-            </form>
-        {% else %}
-            Number of points: {{ gd.num_points }}
-        {% endif %}
-    </p>
-    <p>Points:</p>
-    {% if not gd.points_ready %}
-        <form action={% url 'points' gd_id %} method="post">
-        {% csrf_token %}
-            {{ points_form }}
-            <input type="submit" value="Update points">
-        </form>
-    {% else %}
-        {% for i, point in enum_points %}
-            <p>X{{ i }}: {{ point.x }}  Y{{ i }}: {{ point.y }}</p>
-        {% endfor %}
-    {% endif %}
-    <p>Alpha: {{ gd.alpha }}</p>
-    <p>Acceptable range: {{ gd.acceptable_range }}</p>
-    <p>Current step: {{ gd.current_step }}</p>
-    <p>Max steps: {{ gd.max_steps }}</p>
-    <p>Theta0: {{ gd.theta0 }}</p>
-    <p>Theta1: {{ gd.theta1 }}</p>
-    <p>Error: {{ gd.error }}</p>
-    <img src="data:image/png;base64, {{ gd_plot_uri }}" alt="" height="400" width="400">
-    <img src="data:image/png;base64, {{ j_theta0_plot_uri }}" alt="" height="400" width="400">
-    <img src="data:image/png;base64, {{ j_theta1_plot_uri }}" alt="" height="400" width="400">
-    <p><a href="/proceed/{{ gd_id }}/">Proceed</a></p>
-    <p><a href="/run/{{ gd_id }}/">Run</a></p>
-    <p><a href="/">Start over</a></p>
+    <h1 style="text-align: center">Linear Regression Using Gradient Descent</h1>
+    <div id="left_panel">
+        <div id="num_points_div">
+            {% if not gd.points_ready %}
+                <form action={% url 'num_points' gd_id %} method="post">
+                {% csrf_token %}
+                    <p>{{ num_points_form }}</p>
+                    <p><input type="submit" value="Update number of points"></p>
+                </form>
+            {% else %}
+                <p>Number of points: {{ gd.num_points }}</p>
+            {% endif %}
+        </div>
+
+        <div id="points_div">
+            <p>Points:</p>
+            {% if not gd.points_ready %}
+                <form action={% url 'points' gd_id %} method="post">
+                {% csrf_token %}
+                    <div id="points_form">
+                        {{ points_form.as_ul }}
+                    </div>
+                    <input type="submit" value="Update points">
+                </form>
+            {% else %}
+                <ul style="list-style-type: none">
+                    {% for i, point in enum_points %}
+                        <li>X{{ i }}: {{ point.x }}</li>
+                        <li>Y{{ i }}: {{ point.y }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="parameters_panel">
+        <div id="parameters_div_1">
+            <p>Current step: {{ gd.current_step }}</p>
+            <p>Max steps: {{ gd.max_steps }}</p>
+            <p>Alpha: {{ gd.alpha }}</p>
+        </div>
+
+        <div id="parameters_div_2">
+            <p>Theta0: {{ gd.theta0 }}</p>
+            <p>Theta1: {{ gd.theta1 }}</p>
+            <p>Error: {{ gd.error }}</p>
+        </div>
+    </div>
+
+    <div id="graphs_panel">
+        <div id="graph_div_1"><img src="data:image/png;base64, {{ gd_plot_uri }}" alt="" height="400" width="400"></div>
+        <div id="graph_div_2"><img src="data:image/png;base64, {{ j_theta0_plot_uri }}" alt="" height="400" width="400"></div>
+        <div id="graph_div_3"><img src="data:image/png;base64, {{ j_theta1_plot_uri }}" alt="" height="400" width="400"></div>
+    </div>
+
+    <div id="commands_panel">
+        <p><a href="/proceed/{{ gd_id }}/">Proceed</a></p>
+        <p><a href="/run/{{ gd_id }}/">Run</a></p>
+        <p><a href="/">Start over</a></p>
+    </div>
 </body>
 </html>
